@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"> <!--모바일 반응형 디자인 머시기를 위한 거라는데 일단 해놓음. 붙스트랩 introduction참고-->
+	<title>그누가아무리맛있다해도</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!--$를 사용하기 위함-->
+</head>
+    <style>
+        #all, #content_main_user {
+            display: flex;
+        }
+        #tryAdd, #content_add, #content_list, #content_list_placeid, #content_modify, #userinfo_n, #userinfo_y {
+            display: none;
+        }
+        .scrollarea {
+            max-height: calc(100vh - 180px); /* 원하는 높이로 조절하세요 */
+            overflow-y: auto; /* 세로 스크롤을 표시하고, 내용이 넘칠 경우 스크롤 생성 */
+        }
+        #placesearch::placeholder {
+            color : grey;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="p-3 text-bg-dark">
+        <div class="container">
+          <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="32" fill="currentColor" class="bi bi-emoji-smile" viewBox="0 0 16 16">
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                    <path d="M4.285 9.567a.5.5 0 0 1 .683.183A3.498 3.498 0 0 0 8 11.5a3.498 3.498 0 0 0 3.032-1.75.5.5 0 1 1 .866.5A4.498 4.498 0 0 1 8 12.5a4.498 4.498 0 0 1-3.898-2.25.5.5 0 0 1 .183-.683zM7 6.5C7 7.328 6.552 8 6 8s-1-.672-1-1.5S5.448 5 6 5s1 .672 1 1.5zm4 0c0 .828-.448 1.5-1 1.5s-1-.672-1-1.5S9.448 5 10 5s1 .672 1 1.5z"/>
+                </svg>
+            <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+              <li><a href="/" class="nav-link px-2 fs-5 text-white" id="reloadpage"></a></li>
+              <li><button class="nav-link px-2 fs-10 text-secondary" id="changepagename" data-bs-toggle="popover" style="margin-top:5px;">홈페이지 이름 바꾸기</button></li>
+              <li><button href="/" class="nav-link px-2 fs-10 text-secondary" id="requestToadmin" data-bs-toggle="popover" style="margin-top:5px;">관리자에게 요청하기</button></li>
+            </ul>
+    
+            <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search" id="searchForm">
+              <input id="placesearch" type="search" class="form-control form-control-dark text-bg-dark" placeholder="음식점 검색" aria-label="Search" style="margin-top:1px">
+            </form>
+
+            <div class="text-end">
+                <div id="userinfo_n">
+                    <button id="userinfo_n_register" class="btn btn-warning" data-bs-toggle="popover">회원가입</button>
+                    <button id="userinfo_n_login" class="btn btn-warning" data-bs-toggle="popover">로그인</button>
+                    <div id="content_main_user">
+                        <div id="content_main_user_input"></div>
+                        <div id="content_main_user_button"></div>
+                    </div>
+                </div>
+                <div id="userinfo_y">
+                    <span id="userinfo_y_show" style="display: inline-block; margin-top : 8px; margin-right:7px;"></span>
+                    <button id="logout" class="btn btn-warning" style="display: inline-block; ">로그아웃</button>
+                </div>
+            </div>
+          </div>
+        </div>
+    </header>
+    <div class="container-fluid pb-3">
+        <div class="d-grid gap-3" style="grid-template-columns: 5fr 2fr;">
+            <div class="bg-body-tertiary border rounded-3" style="height: 85vh; width: 100%; margin-top:15px; position:relative;"> <!--지도영역-->
+                <div id="map" style="width:100%; height:100%;"></div>
+                <button id="tryAdd" class="btn btn-warning btn-lg" style="position: absolute; top: 5%; left: 1%; transform: translate(0%, -50%); z-index: 9999;">추가하기</button>
+            </div>
+            <div id="content">
+            <div id="content_main"> <!--처음 들어갔을때 보이는 부분, 음식점을 랭킹순으로 나열해야함-->
+                <div class="d-flex flex-column align-items-stretch flex-shrink-0 bg-body-tertiary" style="width: 380px; margin-left:10px; margin-top:15px;">
+                    <div class="d-flex flex-shrink-0 p-3 link-body-emphasis text-decoration-none border-bottom"> <!--카테고리/정렬-->
+                      <div style="margin-top:7px; margin-right:10px;">카테고리</div>
+                      <div>
+                        <select id="content_main_category" class="form-select" style="width: 100px;">
+                            <option selected value="0">전체</option>
+                        </select>
+                      </div>
+                      <div style="margin-top:7px; margin-right:10px; margin-left:15px;">정렬</div>
+                      <div>
+                        <select id="content_main_order" class="form-select">
+                            <option selected value="0">별점순</option>
+                            <option value="1">리뷰순</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="list-group list-group-flush border-bottom scrollarea" id="content_main_names"></div>
+                </div>
+            </div>
+            <div id="content_list"> <!--특정 음식점을 클릭했을 때 그곳에 대한 리뷰가 보이는 부분-->
+                <p id="content_list_placeid"></p> <!--hidden-->
+                <div class="d-flex flex-column align-items-stretch flex-shrink-0 bg-body-tertiary" style="width: 380px; margin-left:10px; margin-top:15px;">
+                    <div class="d-flex flex-shrink-0 p-3 text-decoration-none border-bottom"> <!--카테고리/정렬-->
+                      <button id="content_list_back" class="btn btn-outline-dark" style="width: 40px; height:40px; margin-top: 5px;"> &lt; </button>
+                      <div class="d-flex w-100 align-items-center justify-content-between">
+                        <div>
+                            <strong id="content_list_placename" style="margin-left:15px; margin-top:3px;"></strong>
+                            <button id="content_list_place_modify" class="btn btn-sm btn-outline-dark" style="padding: 0.10rem 0.25rem; font-size: 0.75rem; margin-bottom: 3.5px;">수정</button>
+                            <div id="content_list_category" class="small" style="margin-top:2px; margin-left: 15px; width:170px;"></div>
+                        </div>
+                            <span id="content_list_score"></span>
+                      </div>
+                      
+                    </div>
+                    <div class="list-group list-group-flush border-bottom scrollarea" id="content_list_titles"></div>
+                </div>
+            </div>
+            <div id="content_add"> <!--새 음식점을 등록할때 보이는 부분-->
+                <input id="content_add_name" class="form-control form-control-sm" placeholder="이름">
+                <div id="content_add_category"></div>
+                <button id="add" class="btn btn-outline-dark btn-sm">ok</button>
+            </div>
+        </div>
+        </div>
+    </div>
+<script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=8a5297a0938a44e99ff564c62d2987a9"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm" crossorigin="anonymous"></script>
+<script>
+$(function(){
+    $('#changepagename').popover({
+        html : true,
+        content:`<p class="fs-8 text-secondary">10자 이내로 입력해주세요</p>
+                <input id='pagename' class='form-control form-control-sm' value='${document.getElementById("reloadpage").innerHTML}'>\
+                <button id='pagenamebtn' class='btn btn-outline-dark btn-sm'>변경</button>`,
+        sanitize: false
+    });
+    $(document).on('click', '#pagenamebtn', function() {
+        fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/changePagename`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({pgname:document.getElementById("pagename").value})
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload(true);
+            } else {
+                return response.text();
+            } 
+        })
+        .then(errormessage => {
+            if (errormessage) alert(errormessage);
+        })
+    });
+}); // popover initialize
+$(function(){
+    $('#requestToadmin').popover({
+        html : true,
+        content:`<textarea id='requestcontent' class='form-control form-control-sm' rows=3 placeholder="장소 삭제 등을 요청할 수 있습니다"></textarea>\
+                <button id='requestbtn' class='btn btn-outline-dark btn-sm'>요청</button>`,
+        sanitize: false
+    });
+    $(document).on('click', '#requestbtn', function() {
+        fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/userRequest`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({request:document.getElementById("requestcontent").value})
+            })
+            .then(response => {
+                if (response.ok) {
+                    $('#requestToadmin').popover('hide');
+                    alert("요청완료");
+                } else {
+                    return response.text();
+                } 
+            })
+            .then(errormessage => {
+                if (errormessage) alert(errormessage);
+            })
+    });
+}); // popover initialize
+$(function(){
+    $('#userinfo_n_register').popover({
+        html : true,
+        content:"<p class='fs-8 text-secondary'>본 사이트는 보안이 안됩니다. 안쓰는 비밀번호를 입력하세요 (ex:1234)</p>\
+                <input id='registerId' class='form-control form-control-sm' placeholder='아이디(한글가능)'>\
+                <input id='registerPw' class='form-control form-control-sm' placeholder='비밀번호(안 지켜줌)'>\
+                <button id='register' class='btn btn-outline-dark btn-sm'>회원가입</button>",
+        sanitize: false
+    });
+    $(document).on('click', '#register', function() {
+        fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({registerId:document.getElementById('registerId').value,
+                                    registerPw:document.getElementById('registerPw').value})
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("회원가입 완료")
+                    location.reload(true);
+                } else {
+                    return response.text();
+                } 
+            })
+            .then(errormessage => {
+                if (errormessage) alert(errormessage);
+            })
+    });
+}); // popover initialize
+$(function(){
+    $('#userinfo_n_login').popover({ 
+        html : true, 
+        content:"<input id='loginId' class='form-control form-control-sm' placeholder='아이디(한글가능)'>\
+                <input id='loginPw' class='form-control form-control-sm' placeholder='비밀번호'>\
+                <button id='login' class='btn btn-outline-dark btn-sm'>로그인</button>",
+        sanitize: false
+    });
+    $(document).on('click', '#login', function() {
+        fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({loginId:document.getElementById('loginId').value,
+                                loginPw:document.getElementById('loginPw').value})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.length === 0) {
+                    alert("다시 시도하세요");
+                } else {
+                    //location.reload('true'); asdf
+                }
+            })
+    });
+}); // popover initialize
+var container = document.getElementById('map');
+var options = {
+    center: new kakao.maps.LatLng(35.23223, 129.08620),
+    level: 3
+};
+var markers = []; // 마커를 지우기 위해서 보관하는 배열
+var map = new kakao.maps.Map(container, options);
+fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/changePagename`, { // 홈페이지 이름 가져옴 ( 유저가 바꿀 수 있는 기능 구현하기 위함 )
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById("reloadpage").innerHTML = data[0].pgname;
+    });
+fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/getplaces_fromcategory_scoredesc`, { // 처음에 전체 데이터로 마커와 리스트 생성
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({category:0})
+    })
+    .then(response => response.json())
+    .then(data => loadplacelist(data));
+fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/getcategory`, { // 유저가 계속 카테고리를 추가할 수 있음. 페이지 로드할때 매번 카테고리 정보를 가져옴
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        for (var i=0; i < data.length; i ++) {
+            var category = document.createElement('option');
+            category.innerHTML = data[i].placetype;
+            category.value = data[i].cid;
+            document.getElementById("content_main_category").appendChild(category);
+        }
+
+        const selectBox = document.getElementById('content_main_category');
+        selectBox.addEventListener('change', function() {
+            if(document.getElementById("content_main_order").value == 0) {
+                fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/getplaces_fromcategory_scoredesc`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({category:this.value})
+                })
+                .then(response => response.json())
+                .then(data => loadplacelist(data));
+            } else {
+                fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/getplaces_fromcategory_countdesc`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({category:this.value})
+                })
+                .then(response => response.json())
+                .then(data => loadplacelist(data));
+            }
+        })
+    });
+fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/usercheck`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.length === 0) {
+            document.getElementById("userinfo_n").style.display = "block";
+        }
+        else {
+            document.getElementById("userinfo_y_show").innerHTML = data[0].username + "님 안녕! ";
+            document.getElementById("userinfo_y").style.display = "block";
+            if (data[0].username == "admin") {
+                var checkrequest = document.createElement('button');
+                checkrequest.setAttribute('class', 'nav-link px-2 fs-10 text-secondary');
+                checkrequest.setAttribute('id', 'checkrequest');
+                checkrequest.setAttribute('data-bs-toggle', 'popover');
+                checkrequest.setAttribute('style', 'margin-top: 5px');
+                checkrequest.innerHTML = "요청 확인"
+                document.getElementById("requestToadmin").parentNode.parentNode.appendChild(checkrequest);
+
+                fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/getuserRequest`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    var html = `<ul class="list-group">`
+                    for (var i=0; i<data.length; i++) {
+                        html = html + `<li class="list-group-item">${data[i].username}님 : ${data[i].request}\
+                             <button class="btn btn-outline-secondary btn-sm" style="margin-left:5px;"\
+                             onclick="delrequest(this, ${data[i].no})">확인</button></li>`;
+                    }
+                    $(function(){
+                        $('#checkrequest').popover({ 
+                            html : true, 
+                            content:html,
+                            sanitize: false
+                        });
+                    })
+                })
+            }
+        }
+})
+var imageSrc = "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
+var imageSize = new kakao.maps.Size(28, 42); 
+var markerImage = new kakao.maps.MarkerImage(imageSrc, imageSize); 
+var bluemarker = new kakao.maps.Marker({
+    image : markerImage
+});  // 지도를 클릭한 위치에 표출할 마커입니다
+var latlng;
+kakao.maps.event.addListener(map, 'click', function(mouseEvent) { // 맵 클릭했을 때 이벤트
+    document.getElementById("content_list").style.display = "none";
+    document.getElementById("content_add").style.display = "none";
+    document.getElementById("content_main").style.display = "block";
+    document.getElementById("tryAdd").style.display = "block";
+    
+    latlng = mouseEvent.latLng; // 클릭한 위도, 경도 정보를 가져옵니다
+    bluemarker.setPosition(latlng); // 마커 위치를 클릭한 위치로 옮깁니다
+    bluemarker.setMap(map); // 지도에 마커를 표시합니다
+});
+document.getElementById("reloadpage").addEventListener('click', () => {location.reload(true);})
+document.getElementById("content_main_order").addEventListener('change', function() {
+    if(this.value == 0) {
+        fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/getplaces_fromcategory_scoredesc`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({category:document.getElementById("content_main_category").value})
+        })
+        .then(response => response.json())
+        .then(data => loadplacelist(data));
+    } else {
+        fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/getplaces_fromcategory_countdesc`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({category:document.getElementById("content_main_category").value})
+        })
+        .then(response => response.json())
+        .then(data => loadplacelist(data));
+    }
+})
+document.getElementById("logout").addEventListener('click', () => {
+    document.cookie = 'sessionId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=localhost;';
+    location.reload(true);
+})
+document.getElementById("tryAdd").addEventListener('click', () => {tryAdd()});
+document.getElementById("content_list_back").addEventListener('click', () => {
+    document.getElementById("content_add").style.display = "none";
+    document.getElementById("content_list").style.display = "none";
+    document.getElementById("content_main").style.display = "block";
+})
+document.getElementById("content_list_place_modify").addEventListener('click', async () => {
+    var group = document.createElement('div');
+    group.setAttribute('class', 'list-group-item lh-sm');
+    group.setAttribute('id', 'modifyplace');
+    document.getElementById("content_list_placename").parentNode.insertBefore(group, document.getElementById("content_list_placename"));
+    var name = document.createElement('input');
+    name.value = document.getElementById("content_list_placename").innerHTML;
+    name.setAttribute('class', 'form-control');
+    name.setAttribute('style', 'margin-left:5px; margin-bottom:5px;');
+    group.appendChild(name);
+
+    var category = document.createElement('div');
+    group.appendChild(category);
+    var currentcategory;
+    await new Promise((resolve, reject) => {
+        fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/getcategory_fromplaceid`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({placeid:document.getElementById("content_list_placeid").innerHTML})
+    })
+    .then(response => response.json())
+    .then((data) => {currentcategory = data; resolve();})
+    })
+    fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/getcategory`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        for (var i=0; i < data.length; i ++) {
+            var shouldBeChecked = false;
+            for (var j=0; j<currentcategory.length; j++) {
+                if (currentcategory[j].cid == data[i].cid) shouldBeChecked = true;
+            }
+
+            var catebutton = document.createElement('div');
+            catebutton.setAttribute('class' , 'form-check form-check-inline');
+            catebutton.innerHTML = `<input class="form-check-input" type="checkbox" name="category" value="${data[i].cid}" ${shouldBeChecked ? 'checked' : ''}>
+                                    <label class="form-check-label" for="cateCheckbox${i}">${data[i].placetype}</label>`
+            category.appendChild(catebutton);
+        }
+        var addcategorybtn = document.createElement('button');
+        addcategorybtn.setAttribute('class' , 'btn btn-outline-secondary btn-sm');
+        addcategorybtn.setAttribute('style' , 'margin-left:10px;');
+        addcategorybtn.innerHTML = "새 카테고리 추가"
+        category.appendChild(addcategorybtn);
+
+        addcategorybtn.addEventListener('click', () => {
+            addcategorybtn.remove();
+            var addcategoryinput = document.createElement('input');
+            addcategoryinput.setAttribute('class', 'form-control form-control-sm');
+            addcategoryinput.setAttribute('style', 'display:inline-block; width:65px; height:30px; margin-left:10px;');
+            category.appendChild(addcategoryinput);
+            var ok = document.createElement('button');
+            ok.setAttribute('class', 'btn btn-outline-dark btn-sm');
+            ok.setAttribute('style', 'margin-left:5px; margin-bottom:5px;');
+            ok.innerHTML="ok";
+            category.appendChild(ok);
+
+            ok.addEventListener('click', () => {
+                fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/addcategory`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({placetype:addcategoryinput.value})
+                })
+                .then(loadreviewlist(document.getElementById("content_list_placeid").innerHTML))
+            })
+        })
+    })
+
+    var addbutton = document.createElement('button');
+    addbutton.setAttribute('class', 'btn btn-outline-dark btn-sm');
+    addbutton.innerHTML="ok";
+    group.appendChild(addbutton);
+    addbutton.addEventListener('click', () => {
+        if (name.value === "") alert("음식점 이름을 입력하세요");
+        else {
+            const selectedCheckboxes = [];
+            const checkboxes = document.querySelectorAll('.form-check-input');
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                selectedCheckboxes.push(checkbox.value);
+                }
+            });
+            fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/modifyplace`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({id:document.getElementById("content_list_placeid").innerHTML,
+                                        name:name.value,
+                                        category:selectedCheckboxes})
+                })
+                .then(location.reload(true));
+            }
+    })
+    
+    document.getElementById("content_list_placename").innerHTML = "";
+    document.getElementById("content_list_category").innerHTML = "";
+    document.getElementById("content_list_score").innerHTML = "";
+    document.getElementById("content_list_place_modify").style.display = "none";
+})
+document.getElementById('searchForm').addEventListener('submit', function(event) {
+      event.preventDefault(); // 폼의 기본 동작을 막음
+      var searchInput = document.getElementById('placesearch');
+      var searchTerm = searchInput.value;
+
+      fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/searchplace`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({searchTerm:searchTerm})
+        })
+        .then(response => response.json())
+        .then(data => {loadplacelist(data)})
+      
+      searchInput.value=""
+});
+function tryAdd() {
+    if(document.getElementById("createplace")) document.getElementById("createplace").remove();
+    document.getElementById("tryAdd").style.display = "none";
+
+    var group = document.createElement('div');
+    group.setAttribute('class', 'list-group-item py-3 lh-sm');
+    group.setAttribute('id', 'createplace');
+    document.getElementById("content_main_names").insertBefore(group, document.getElementById("content_main_names").firstChild);
+    var name = document.createElement('input');
+    name.setAttribute('placeholder', '이름');
+    name.setAttribute('class', 'form-control');
+    name.setAttribute('style', 'margin-bottom:5px;');
+    group.appendChild(name);
+
+    var category = document.createElement('div');
+    group.appendChild(category);
+    fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/getcategory`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        for (var i=0; i < data.length; i ++) {
+            var catebutton = document.createElement('div');
+            catebutton.setAttribute('class' , 'form-check form-check-inline');
+            catebutton.innerHTML = `<input class="form-check-input" type="checkbox" name="category" value="${data[i].cid}">
+                                    <label class="form-check-label" for="cateCheckbox${i}">${data[i].placetype}</label>`
+            category.appendChild(catebutton);
+        }
+        var addcategorybtn = document.createElement('button');
+        addcategorybtn.setAttribute('class' , 'btn btn-outline-secondary btn-sm');
+        addcategorybtn.setAttribute('style' , 'margin-left:10px;');
+        addcategorybtn.innerHTML = "새 카테고리 추가"
+        category.appendChild(addcategorybtn);
+
+        addcategorybtn.addEventListener('click', () => {
+            addcategorybtn.remove();
+            var addcategoryinput = document.createElement('input');
+            addcategoryinput.setAttribute('class', 'form-control form-control-sm');
+            addcategoryinput.setAttribute('style', 'display:inline-block; width:65px; height:30px; margin-left:10px;');
+            category.appendChild(addcategoryinput);
+            var ok = document.createElement('button');
+            ok.setAttribute('class', 'btn btn-outline-dark btn-sm');
+            ok.setAttribute('style', 'margin-left:5px; margin-bottom:5px;');
+            ok.innerHTML="ok";
+            category.appendChild(ok);
+
+            ok.addEventListener('click', () => {
+                fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/addcategory`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({placetype:addcategoryinput.value})
+                })
+                .then(tryAdd())
+            })
+        })
+    })
+
+    var addbutton = document.createElement('button');
+    addbutton.setAttribute('id', 'add');
+    addbutton.setAttribute('class', 'btn btn-outline-dark btn-sm');
+    addbutton.innerHTML="ok";
+    group.appendChild(addbutton);
+    addbutton.addEventListener('click', () => {
+        if (name.value === "") alert("음식점 이름을 입력하세요");
+        else {
+            const selectedCheckboxes = [];
+            const checkboxes = document.querySelectorAll('.form-check-input');
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                selectedCheckboxes.push(checkbox.value);
+                }
+            });
+            fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/addplace`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({name:name.value,
+                                        latitude:latlng.getLat().toFixed(5),
+                                        longitude:latlng.getLng().toFixed(5),
+                                        category:selectedCheckboxes})
+                })
+                .then(location.reload(true));
+            }
+    })
+}
+function removeAllEvents(element) {
+  const clone = element.cloneNode(true);
+  element.parentNode.replaceChild(clone, element);
+}
+async function loadplacelist(data) { // 음식점 데이터 받아서 지도에 마커 띄우고 리스트 표시해줌
+    for (var i = 0; i < markers.length; i++) { // 이미 있던 마커 없애기
+        markers[i].setMap(null);
+    }
+    document.getElementById("content_main_names").innerHTML = ""; // 음식점 리스트 없애기
+    markers = []; // 마커배열 초기화
+    placecategory = []; // 음식점 카테고리 배열
+    
+    await new Promise((resolve, reject) => {
+        fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/getcategory_fromplaceid`, { // 로그인 해야 리뷰 등록 가능하게 하기 - '리뷰 작성하기' 버튼 유무
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            placecategory = data;
+            resolve();
+        });        
+    })
+    //var imageSrc = "https://cdn1.iconfinder.com/data/icons/interface-travel-and-environment/64/destination-location-map-pin-marker-pointer-64.png"
+    var imageSrc = "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
+        for (var i=0; i < data.length; i ++) { // 지도에 마커 띄우기
+            var imageSize = new kakao.maps.Size(24, 35); 
+            var markerImage = new kakao.maps.MarkerImage(imageSrc, imageSize); 
+            var marker = new kakao.maps.Marker({ 
+                map: map, 
+                position: new kakao.maps.LatLng(data[i].latitude, data[i].longitude), 
+                title : data[i].name,
+                //image : markerImage // 이거 주석하면 기본 마커로 설정됌 
+            });
+            markers.push(marker);
+            kakao.maps.event.addListener(marker, 'click', loadreviewlist(data[i].id))
+            var group = document.createElement('div');
+            group.setAttribute('class', 'list-group-item list-group-item-action py-3 lh-sm');
+            document.getElementById("content_main_names").appendChild(group);
+            var info = document.createElement('div');
+            info.setAttribute('class', 'd-flex w-100 align-items-center justify-content-between');
+            group.appendChild(info);
+
+            var leftdiv = document.createElement("div");
+            info.appendChild(leftdiv);
+            var title = document.createElement('strong');
+            title.setAttribute('class', 'mb-1');
+            title.innerHTML = data[i].name;
+            leftdiv.appendChild(title);
+            var category = document.createElement('div');
+            category.setAttribute('class', 'small');
+            category.setAttribute('style', 'margin-top: 5px; width:200px;');
+            var html = "";
+            var count = 0;
+            for (var j=0; j < placecategory.length; j ++) {
+                if (placecategory[j].id === data[i].id) {
+                    if (count !== 0) html = html + "/";
+                    html = html + placecategory[j].placetype;
+                    count++;
+                }
+            }
+            category.innerHTML = html;
+            leftdiv.appendChild(category);
+
+            var score = document.createElement('span');
+            var avgscore = data[i].avgscore;
+            if (avgscore == null) avgscore = "??";
+            score.innerHTML = data[i].count + '개 리뷰 / ★ ' + avgscore;
+            info.appendChild(score);
+            group.addEventListener('click', loadreviewlist(data[i].id));
+        };
+}
+function loadreviewlist(placeid) {
+    return async function() {
+        document.getElementById("content_list_titles").innerHTML = "";// 중복을 방지하기 위해 공간 초기화 하고 시작
+        document.getElementById("content_list_placeid").innerHTML = placeid;
+        document.getElementById("content_list_place_modify").style.display = "inline-block";
+        if (document.getElementById("modifyplace")) document.getElementById("modifyplace").remove();
+        if (document.getElementById("content_list_place_delete")) document.getElementById("content_list_place_delete").remove();
+
+        fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/getlist_fromid`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({id:placeid})
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("content_list_placename").innerHTML = data[0].name;
+            document.getElementById("content_list_score").innerHTML = data[0].count + "개 리뷰 / ★" + data[0].avgscore;
+
+            var moveLatLon = new kakao.maps.LatLng(data[0].latitude, data[0].longitude);
+            map.panTo(moveLatLon);
+
+            var targetPosition = new kakao.maps.LatLng(data[0].latitude, data[0].longitude);
+            for (var i = 0; i < markers.length; i++) {
+                if (Math.abs(markers[i].getPosition().La - targetPosition.La) < 0.000001 && Math.abs(markers[i].getPosition().Ma - targetPosition.Ma) < 0.000001) {
+                    markers[i].setVisible(false);
+                    setTimeout(() => {
+                        markers[i].setVisible(true);
+                    }, 300);
+                break;
+                }
+            }
+        });
+
+        fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/getcategory_fromplaceid`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({placeid:placeid})
+        })
+        .then(response => response.json())
+        .then(data => {
+            var categoryhtml = "";
+            for (var i=0; i < data.length; i ++) {
+                if (i!=0) categoryhtml = categoryhtml + "/";
+                categoryhtml = categoryhtml + data[i].placetype;
+            }
+            document.getElementById("content_list_category").innerHTML = categoryhtml;
+        })
+
+        var currentuser;
+        await new Promise((resolve, reject) => {
+            fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/usercheck`, { // 로그인 해야 리뷰 등록 가능하게 하기 - '리뷰 작성하기' 버튼 유무 / 관리자의 경우 글 삭제 가능
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.length !== 0) {
+                    if (data[0].username == "admin") { // 관리자의 경우 장소 삭제 가능
+                        var delbutton = document.createElement("button");
+                        delbutton.setAttribute('id', 'content_list_place_delete');
+                        delbutton.setAttribute('class', 'btn btn-sm btn-outline-dark');
+                        delbutton.setAttribute('style', "padding: 0.10rem 0.25rem; font-size: 0.75rem; margin-bottom: 3.5px;");
+                        delbutton.innerHTML = "삭제";
+                        document.getElementById("content_list_category").parentNode.insertBefore(delbutton, document.getElementById("content_list_category"));
+                    
+                        delbutton.addEventListener('click', () => {
+                            fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/deleteplace`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({id:document.getElementById("content_list_placeid").innerHTML})
+                            })
+                            .then(location.reload(true))
+                        })
+                    }
+
+                    currentuser = data[0].username;
+                    var group = document.createElement('div');
+                    group.setAttribute('class', 'list-group-item list-group-item-action py-3 lh-sm');
+                    group.setAttribute('id', 'content_review')
+                    document.getElementById("content_list_titles").appendChild(group);
+                    var info = document.createElement('div');
+                    info.setAttribute('class', 'd-flex w-100 align-items-center justify-content-between');
+                    group.appendChild(info);
+                    var title = document.createElement('div');
+                    //title.setAttribute('class', 'mb-1');
+                    title.innerHTML = "리뷰 작성하기";
+                    info.appendChild(title);
+                    group.addEventListener('click', () => {
+                        group.setAttribute('class', 'list-group-item py-3 lh-sm')
+                        removeAllEvents(group);
+                        document.getElementById("content_review").innerHTML = "";
+                        var reviewtitle = document.createElement('input');
+                        reviewtitle.setAttribute('class', 'form-control form-control-sm');
+                        reviewtitle.setAttribute('placeholder', '제목');
+                        document.getElementById("content_review").appendChild(reviewtitle);
+                        var reviewdescription = document.createElement('textarea');
+                        reviewdescription.setAttribute('class', 'form-control form-control-sm');
+                        reviewdescription.setAttribute('placeholder', '내용');
+                        reviewdescription.setAttribute('rows', 3);
+                        document.getElementById("content_review").appendChild(reviewdescription);
+                        var reviewscore = document.createElement('input');
+                        reviewscore.setAttribute('class', 'form-control form-control-sm');
+                        reviewscore.setAttribute('placeholder', '별점(1/2/3/4/5)');
+                        document.getElementById("content_review").appendChild(reviewscore);
+                        var reviewbutton = document.createElement('button');
+                        reviewbutton.setAttribute('class', 'btn btn-outline-dark btn-sm');
+                        reviewbutton.innerHTML = "ok";
+                        document.getElementById("content_review").appendChild(reviewbutton);
+                        
+                        reviewbutton.addEventListener('click', () => {
+                            if (reviewtitle.value === "") alert("제목을 입력해주세요");
+                            else if (reviewdescription.value === "") alert("내용을 입력해주세요");
+                            else if (isNaN(reviewscore.value) || reviewscore.value < 1 || reviewscore.value > 5 || !Number.isInteger(parseFloat(reviewscore.value))) alert("올바른 점수를 입력해주세요")
+                            else {
+                                fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/review`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({placeid:document.getElementById("content_list_placeid").innerHTML,
+                                                        title:reviewtitle.value,
+                                                        description:reviewdescription.value,
+                                                        score:reviewscore.value})
+                                })
+                                .then(location.reload(true));
+                            }
+                        })
+                    });
+                }
+                resolve();
+            });
+        })
+
+        await new Promise((resolve, reject) => {
+            fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/loadreviewlist`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({placeid:placeid})
+            })
+            .then(response => response.json())
+            .then(data => {
+                for (var i=0; i < data.length; i ++) {
+                    var group = document.createElement('div');
+                    group.setAttribute('class', 'list-group-item list-group-item-action py-3 lh-sm');
+                    group.setAttribute('id', data[i].rid);
+                    document.getElementById("content_list_titles").appendChild(group);
+
+                    var info = document.createElement('div');
+                    info.setAttribute('class', 'd-flex w-100 align-items-center justify-content-between');
+                    group.appendChild(info);
+                    var title = document.createElement('strong');
+                    title.setAttribute('class', 'mb-1');
+                    title.innerHTML = data[i].title + '(' + data[i].username + '님)';
+                    info.appendChild(title);
+                    var score = document.createElement('span');
+                    score.innerHTML = '★ ' + data[i].score;
+                    info.appendChild(score);
+
+                    var contentspace = document.createElement('div');
+                    contentspace.setAttribute('class', 'col-10 mb-1');
+                    contentspace.setAttribute('style', 'margin-top:10px; display: none;');
+                    contentspace.innerHTML = data[i].description;
+                    if (currentuser && data[i].username === currentuser) {
+                        var modbutton = document.createElement('button');
+                        var delbutton = document.createElement('button');
+                        modbutton.setAttribute('class' , 'btn btn-outline-dark btn-sm');
+                        delbutton.setAttribute('class' , 'btn btn-outline-dark btn-sm');
+                        modbutton.innerHTML = "수정";
+                        delbutton.innerHTML = "삭제";
+                        modbutton.addEventListener('click', modifypost(data[i].rid));
+                        delbutton.addEventListener('click', deletepost(data[i].rid));
+                        var moddeldiv = document.createElement('div');
+                        moddeldiv.setAttribute('style', 'margin-top:10px;');
+                        moddeldiv.appendChild(modbutton);
+                        moddeldiv.appendChild(delbutton);
+                        contentspace.appendChild(moddeldiv);
+                    }
+                    group.appendChild(contentspace);
+
+                    document.getElementById(data[i].rid).addEventListener('click', togglereview(contentspace));
+                }
+                
+                document.getElementById("content_main").style.display = "none";
+                document.getElementById("content_add").style.display = "none";
+                document.getElementById("content_list").style.display = "block";
+                resolve();
+            })
+        })
+    }
+}
+function togglereview(contentspace) {
+    return function() {
+        if (contentspace.style.display === 'none') {
+            contentspace.style.display = 'block';
+        } else {
+            contentspace.style.display = 'none';
+        }
+    }
+}
+function modifypost(rid) {
+    return function() {
+        fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/loadpost`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({rid:rid})
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById(rid).setAttribute('class', 'list-group-item py-3 lh-sm');
+                document.getElementById(rid).innerHTML = "";
+                var title = document.createElement('input');
+                title.value = data[0].title;
+                title.setAttribute('class', 'form-control');
+                document.getElementById(rid).appendChild(title);
+                var description = document.createElement('textarea');
+                description.value = data[0].description;
+                description.setAttribute('class', 'form-control');
+                description.setAttribute('rows', 3);
+                document.getElementById(rid).appendChild(description);
+                var button = document.createElement('button');
+                button.innerHTML = '수정'
+                button.setAttribute('class', 'btn btn-success btn-sm');
+                button.style.float = 'right';
+                button.style.marginTop = '3px';
+                document.getElementById(rid).appendChild(button);
+
+                button.addEventListener('click', async () => {
+                    await fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/modify`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            title: title.value,
+                            description: description.value,
+                            rid: rid
+                        })
+                    });
+
+                    await loadreviewlist(document.getElementById("content_list_placeid").innerHTML)();
+                    var children = document.getElementById(rid).children
+                    for (let i = 0; i < children.length; i++) {
+                        children[i].style.display = 'block';
+                    }
+                })
+            })
+    }
+}
+function deletepost(rid) {
+    return function() {
+        fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/deletepost`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({rid:rid})
+            })
+            .then(location.reload(true));
+    }
+}
+function delrequest(button, no) {
+    button.parentNode.style.backgroundColor = "gray";
+    fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/deluserRequest`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({no:no})
+    })
+}
+</script>
+</body>
+</html>
