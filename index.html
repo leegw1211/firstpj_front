@@ -127,6 +127,7 @@ $(function(){
     $(document).on('click', '#pagenamebtn', function() {
         fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/changePagename`, {
             method: 'POST',
+            credentials: "include",
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -154,6 +155,7 @@ $(function(){
     $(document).on('click', '#requestbtn', function() {
         fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/userRequest`, {
                 method: 'POST',
+                credentials: "include",
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -240,6 +242,7 @@ var markers = []; // 마커를 지우기 위해서 보관하는 배열
 var map = new kakao.maps.Map(container, options);
 fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/changePagename`, { // 홈페이지 이름 가져옴 ( 유저가 바꿀 수 있는 기능 구현하기 위함 )
         method: 'POST',
+        credentials: "include",
         headers: {
             'Content-Type': 'application/json'
         }
@@ -299,6 +302,7 @@ fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/getcategor
     });
 fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/usercheck`, {
         method: 'POST',
+        credentials: "include",
         headers: {
             'Content-Type': 'application/json'
         }
@@ -742,6 +746,7 @@ function loadreviewlist(placeid) {
         await new Promise((resolve, reject) => {
             fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/usercheck`, { // 로그인 해야 리뷰 등록 가능하게 하기 - '리뷰 작성하기' 버튼 유무 / 관리자의 경우 글 삭제 가능
                 method: 'POST',
+                credentials: "include",
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -810,6 +815,7 @@ function loadreviewlist(placeid) {
                             else {
                                 fetch(`https://port-0-firstpj-back-3prof2llkwd4om9.sel4.cloudtype.app/review`, {
                                     method: 'POST',
+                                    credentials: "include",
                                     headers: {
                                         'Content-Type': 'application/json'
                                     },
