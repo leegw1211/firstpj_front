@@ -228,7 +228,7 @@ $(function(){
                 if (data.length === 0) {
                     alert("다시 시도하세요");
                 } else {
-                    //location.reload('true'); asdf
+                    location.reload('true');
                 }
             })
     });
@@ -391,7 +391,7 @@ document.getElementById("content_main_order").addEventListener('change', functio
     }
 })
 document.getElementById("logout").addEventListener('click', () => {
-    document.cookie = 'sessionId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=pnucse99.netlify.app;';
+    document.cookie = sessionId + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     location.reload(true);
 })
 document.getElementById("tryAdd").addEventListener('click', () => {tryAdd()});
