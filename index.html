@@ -392,8 +392,9 @@ document.getElementById("content_main_order").addEventListener('change', functio
 })
 document.getElementById("logout").addEventListener('click', () => {
     console.log(document.cookie);
+    console.log("123");
     document.cookie = 'sessionId=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-    location.reload(true);
+    //location.reload(true);
 })
 document.getElementById("tryAdd").addEventListener('click', () => {tryAdd()});
 document.getElementById("content_list_back").addEventListener('click', () => {
